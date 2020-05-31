@@ -193,7 +193,7 @@ template <int dim>
 void FEM<dim>::generate_mesh(unsigned int numberOfElements){
 
   //Define the limits of your domain
-  L = ; //EDIT
+  L = 0.1 ; //EDIT
   double x_min = 0.;
   double x_max = L;
 
@@ -237,7 +237,7 @@ template <int dim>
 void FEM<dim>::setup_system(){
 
   //Define constants for problem (Dirichlet boundary values)
-  g1 = ; g2 = ; //EDIT
+  g1 =0 ; g2 =0.001 ; //EDIT
 
   //Let deal.II organize degrees of freedom
   dof_handler.distribute_dofs (fe);
@@ -275,6 +275,16 @@ void FEM<dim>::setup_system(){
   quad_weight[0] = 1.; //EDIT
   quad_weight[1] = 1.; //EDIT
 
+  quadRule = 3; //FINISH EDIT - Number of quadrature points along one dimension
+  quad_points.resize(quadRule); quad_weight.resize(quadRule);
+
+  quad_points[0] = 0.; //FINISH EDIT
+  quad_points[1] = -sqrt(3./5.); //FINISH EDIT
+  quad_points[2] = sqrt(3./5.); //FINISH EDIT
+
+  quad_weight[0] = 8./9.; //FINISH EDIT
+  quad_weight[1] = 5./9.; //FINISH EDIT
+  quad_weight[2] = 5./9.; //FINISH EDIT 
   //Just some notes...
   std::cout << "   Number of active elems:       " << triangulation.n_active_cells() << std::endl;
   std::cout << "   Number of degrees of freedom: " << dof_handler.n_dofs() << std::endl;   
@@ -310,6 +320,8 @@ void FEM<dim>::assemble_system(){
 
     //Loop over local DOFs and quadrature points to populate Flocal and Klocal.
     Flocal = 0.;
+    f=1.e11;
+    double Area=1.e-4;
     for(unsigned int A=0; A<dofs_per_elem; A++){
       for(unsigned int q=0; q<quadRule; q++){
 	x = 0;
@@ -317,22 +329,24 @@ void FEM<dim>::assemble_system(){
 	for(unsigned int B=0; B<dofs_per_elem; B++){
 	  x += nodeLocation[local_dof_indices[B]]*basis_function(B,quad_points[q]);
 	}
-	//EDIT - Define Flocal.
+	Flocal[A]+=basis_function(A,quad_points[q])*quad_weight[q]*h_e*0.5*f*Area*x;//EDIT - Define Flocal.
       }
     }
     //Add nonzero Neumann condition, if applicable
+    double hval = 1.e6;
     if(prob == 2){ 
       if(nodeLocation[local_dof_indices[1]] == L){
-	//EDIT - Modify Flocal to include the traction on the right boundary.
+	Flocal[1] += basis_function(1,1.0)*hval;//EDIT - Modify Flocal to include the traction on the right boundary.
       }
     }
 
     //Loop over local DOFs and quadrature points to populate Klocal
     Klocal = 0;
+    double E=1.e11;
     for(unsigned int A=0; A<dofs_per_elem; A++){
       for(unsigned int B=0; B<dofs_per_elem; B++){
 	for(unsigned int q=0; q<quadRule; q++){
-	  //EDIT - Define Klocal.
+	  Klocal+=(2*E*1.e-4/h_e)*basis_gradient(A,quad_points[q])*basis_gradient(B,quad_points[q])*quad_weight[q];//EDIT - Define Klocal.
 	}
       }
     }
@@ -340,11 +354,11 @@ void FEM<dim>::assemble_system(){
     //Assemble local K and F into global K and F
     //You will need to used local_dof_indices[A]
     for(unsigned int A=0; A<dofs_per_elem; A++){
-      //EDIT - add component A of Flocal to the correct location in F
+      F[local_dof_indices[A]]  += Flocal[A];//EDIT - add component A of Flocal to the correct location in F
       /*Remember, local_dof_indices[A] is the global degree-of-freedom number
 	corresponding to element node number A*/
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	//EDIT - add component A,B of Klocal to the correct location in K (using local_dof_indices)
+	K.add(local_dof_indices[A],local_dof_indices[B],Klocal[A][B]);//EDIT - add component A,B of Klocal to the correct location in K (using local_dof_indices)
 	/*Note: K is a sparse matrix, so you need to use the function "add".
 	  For example, to add the variable C to K[i][j], you would use:
 	  K.add(i,j,C);*/
@@ -407,7 +421,16 @@ double FEM<dim>::l2norm_of_error(){
 
     //Find the element length
     h_e = nodeLocation[local_dof_indices[1]] - nodeLocation[local_dof_indices[0]];
-
+    double cval, L = 0.1;
+    if(prob==1)
+{
+//    cval = 1./100. + L*L/6;
+      cval  = 7.*L*L/6.;
+}
+else
+{
+    cval = 1./10. + L*L/2.;
+}
     for(unsigned int q=0; q<quadRule; q++){
       x = 0.; u_h = 0.;
       //Find the values of x and u_h (the finite element solution) at the quadrature points
@@ -415,7 +438,7 @@ double FEM<dim>::l2norm_of_error(){
 	x += nodeLocation[local_dof_indices[B]]*basis_function(B,quad_points[q]);
 	u_h += D[local_dof_indices[B]]*basis_function(B,quad_points[q]);
       }
-      //EDIT - Find the l2-norm of the error through numerical integration.
+      l2norm+=(u_exact-u_h)*(u_exact-u_h)*h_e*0.5*quad_weight[q];	[//EDIT - Find the l2-norm of the error through numerical integration.
       /*This includes evaluating the exact solution at the quadrature points*/
 							
     }
