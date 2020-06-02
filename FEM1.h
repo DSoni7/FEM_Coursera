@@ -94,7 +94,7 @@ class FEM
 template <int dim>
 FEM<dim>::FEM(unsigned int order,unsigned int problem)
 :
-fe (FE_Q<dim>(order), dim), 
+fe (FE_Q<dim>(QIterated<1>(QTrapez<1>(),order)), dim), 
   dof_handler (triangulation)
 {
   basisFunctionOrder = order;
@@ -152,9 +152,9 @@ double FEM<dim>::basis_function(unsigned int node, double xi){
     You need to calculate the value of the specified basis function and order at the given quadrature pt.*/
   
   double value = 1.; //Store the value of the basis function in this variable
-  for(unsigned int i=0;i<(basisFunctionOrder+1);i++){
-  if(index != node){
-  value*=(xi- xi_at_node[i])/(xi_at_node[node]-xi_at_node[i]) }}
+  for(unsigned int i=0;i<=basisFunctionOrder;i++){
+  if(i != node){
+  value*=(xi- xi_at_node[i])/(xi_at_node[node]-xi_at_node[i]); }}
   /*You can use the function "xi_at_node" (defined above) to get the value of xi (in the bi-unit domain)
     at any node in the element - using deal.II's element node numbering pattern.*/
 
@@ -184,7 +184,7 @@ double FEM<dim>::basis_gradient(unsigned int node, double xi){
  {
   value += (basis_function(node,xi)/(xi - xi_at_node(outer)));
 
- }
+ }}
   return value;
 }
 
