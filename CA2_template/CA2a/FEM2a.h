@@ -344,6 +344,7 @@ void FEM<dim>::assemble_system(){
 	      for(unsigned int j=0;j<dim;j++){
 		for(unsigned int I=0;I<dim;I++){
 		  for(unsigned int J=0;J<dim;J++){
+		    Klocal[A][B]+=-basis_gradient(A,quad_point[i])*basis_gradient(B,quad_point[j])*quad_weight[i]*quad_weight[j]*invJacob[i][j]*detJ*kappa[i][j];
 		    //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
 		  }
 		}
@@ -358,7 +359,7 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	//EDIT - Assemble K from Klocal (you can look at HW2)
+	K.add(local_dof_indices[A],local_dof_indices[B],Klocal[A][B]);//EDIT - Assemble K from Klocal (you can look at HW2)
       }
     }
 
