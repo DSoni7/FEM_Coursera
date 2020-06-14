@@ -104,7 +104,27 @@ template <int dim>
 FEM<dim>::~FEM (){
   dof_handler.clear ();
 }
+double FEM<dim>::xi_at_node(unsigned int dealNode){
+  double xi;
 
+  if(dealNode == 0){
+    xi = -1.;
+  }
+  else if(dealNode == 1){
+    xi = 1.;
+  }
+  else if(dealNode <= basisFunctionOrder){
+    xi = -1. + 2.*(dealNode-1.)/basisFunctionOrder;
+  }
+  else{
+    std::cout << "Error: you input node number "
+	      << dealNode << " but there are only " 
+	      << basisFunctionOrder + 1 << " nodes in an element.\n";
+    exit(0);
+  }
+
+  return xi;
+}
 //Define basis functions
 template <int dim>
 double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2){
@@ -112,8 +132,12 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2){
     "xi" is the point (in the bi-unit domain) where the function is being evaluated.
     You need to calculate the value of the specified basis function and order at the given quadrature pt.*/
 
-  double value = 0.; //Store the value of the basis function in this variable
-
+  double value = 1.; //Store the value of the basis function in this variable
+  for(unsigned int i=0;i<=1;i++){
+  for(unsigned int j=0;j<=1;j++){
+  if (i!= node){
+  if (j!=node){
+  value*=(xi_1- xi_at_node[i])*(xi_2-xi_at_node[j])/((xi_at_node[node]-xi_at_node[i])*(xi_at_node[node]-xi_at_node[j])); }}}}
   //EDIT
 
   return value;
@@ -130,7 +154,26 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
   //EDIT
-
+  if(node == 0)
+  {
+    value[0] = -(1.0 - xi_2)/4.0;
+    value[1] = -(1.0 - xi_1)/4.0;
+  }
+  if(node == 1)
+  {
+    value[0] = (1.0 - xi_2)/4.0;
+    value[1] = -(1.0 + xi_1)/4.0; 
+  }
+  if(node == 3)
+  {
+    value[0] = (1.0 + xi_2)/4.0;
+    value[1] = (1.0 + xi_1)/4.0;
+  }
+  if(node == 2)
+  {
+    value[0] = -(1.0 + xi_2)/4.0;
+    value[1] = (1.0 - xi_1)/4.0;
+  }
   return values;
 }
 
@@ -139,10 +182,10 @@ template <int dim>
 void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 
   //Define the limits of your domain
-  double x_min = , //EDIT - define the left limit of the domain, etc.
-    x_max = , //EDIT
-    y_min = , //EDIT
-    y_max = ; //EDIT
+  double x_min =0. , //EDIT - define the left limit of the domain, etc.
+    x_max =0.03, //EDIT
+    y_min =0. , //EDIT
+    y_max =0.08 ; //EDIT
 
   Point<dim,double> min(x_min,y_min),
     max(x_max,y_max);
@@ -154,7 +197,18 @@ template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
   //EDIT - Define the Dirichlet boundary conditions.
-	
+  const unsigned int totalNodes = dof_handler.n_dofs(); //Total number of nodes
+  for(unsigned int globalNode=0; globalNode<totalNodes; globalNode++)
+  {
+  if(nodeLocation[globalNode][1]==0.)
+  {boundary_values[globalNode]=300.0*(1.0 + nodeLocation[globalNode][0]/3.0);}
+  if(nodeLocation[globalNode][1]==0.08)
+  {
+   double xval = nodeLocation[globalNode][0];
+   boundary_values[globalNode] = 310.0*(1.0 + 8.0*xval*xval);
+  }
+  }
+}
   /*Note: this will be very similiar to the define_boundary_conds function
     in the HW2 template. You will loop over all nodes and use "nodeLocations"
     to check if the node is on the boundary with a Dirichlet condition. If it is,
