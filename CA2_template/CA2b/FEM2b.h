@@ -268,7 +268,7 @@ void FEM<dim>::define_boundary_conds(){
 {
   if(nodeLocation[globalNode][0]== 0.	)
   {
-   boundary_values[globalNode] = 300.0*(1.0 + (nodeLocation[globalNode][1]+nodeLocation[globalNode][2]/3.0);
+   boundary_values[globalNode] = 300.0*(1.0 + (nodeLocation[globalNode][1]+nodeLocation[globalNode][2])/3.0);
   }
   if(nodeLocation[globalNode][0]== 0.04	)
   {
