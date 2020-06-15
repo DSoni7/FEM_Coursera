@@ -116,7 +116,45 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2, dou
 
   double value = 0.; //Store the value of the basis function in this variable
 
-  //EDIT
+  if ( node == 0 )
+{
+  value = (1./8.)*(1.-xi_1)*(1.-xi_2)*(1.-xi_3);
+}
+
+   if ( node == 1 )
+{
+  value = (1./8.)*(1.+xi_1)*(1.-xi_2)*(1.-xi_3);
+}
+
+  if ( node == 2 )
+{
+  value = (1./8.)*(1.-xi_1)*(1.+xi_2)*(1.-xi_3);
+}
+
+  if ( node == 3 )
+{
+  value = (1./8.)*(1.+xi_1)*(1.+xi_2)*(1.-xi_3);
+}
+
+  if ( node == 4 )
+{
+  value = (1./8.)*(1.-xi_1)*(1.-xi_2)*(1.+xi_3);
+}
+
+   if ( node == 5 )
+{
+  value = (1./8.)*(1.+xi_1)*(1.-xi_2)*(1.+xi_3);
+}
+
+  if ( node == 6 )
+{
+  value = (1./8.)*(1.-xi_1)*(1.+xi_2)*(1.+xi_3);
+}
+
+  if ( node == 7 )
+{
+  value = (1./8.)*(1.+xi_1)*(1.+xi_2)*(1.+xi_3);
+}//EDIT
 
   return value;
 }
@@ -131,7 +169,61 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
 
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
-  //EDIT
+  if ( node == 0 )
+{
+  values[0] =-(1./8.)*(1.-xi_2)*(1.-xi_3);
+  values[1] =-(1./8.)*(1.-xi_1)*(1.-xi_3);
+  values[2] =-(1./8.)*(1.-xi_1)*(1.-xi_2);
+}
+
+ if ( node == 1 )
+{
+  values[0] =(1./8.)*(1.-xi_2)*(1.-xi_3);
+  values[1] =-(1./8.)*(1.+xi_1)*(1.-xi_3);
+  values[2] =-(1./8.)*(1.+xi_1)*(1.-xi_2);
+}
+
+ if ( node == 2 )
+{
+  values[0] =-(1./8.)*(1.+xi_2)*(1.-xi_3);
+  values[1] =(1./8.)*(1.-xi_1)*(1.-xi_3);
+  values[2] =-(1./8.)*(1.-xi_1)*(1.+xi_2);
+}
+
+ if ( node == 3 )
+{
+  values[0] =(1./8.)*(1.+xi_2)*(1.-xi_3);
+  values[1] =(1./8.)*(1.+xi_1)*(1.-xi_3);
+  values[2] =-(1./8.)*(1.+xi_1)*(1.+xi_2);
+}
+
+ if ( node == 4 )
+{
+  values[0] =-(1./8.)*(1.-xi_2)*(1.+xi_3);
+  values[1] =-(1./8.)*(1.-xi_1)*(1.+xi_3);
+  values[2] =(1./8.)*(1.-xi_1)*(1.-xi_2);
+}
+
+ if ( node == 5 )
+{
+  values[0] =(1./8.)*(1.-xi_2)*(1.+xi_3);
+  values[1] =-(1./8.)*(1.+xi_1)*(1.+xi_3);
+  values[2] =(1./8.)*(1.+xi_1)*(1.-xi_2);
+}
+
+ if ( node == 6 )
+{
+  values[0] =-(1./8.)*(1.+xi_2)*(1.+xi_3);
+  values[1] =(1./8.)*(1.-xi_1)*(1.+xi_3);
+  values[2] =(1./8.)*(1.-xi_1)*(1.+xi_2);
+}
+
+ if ( node == 7 )
+{
+  values[0] =(1./8.)*(1.+xi_2)*(1.+xi_3);
+  values[1] =(1./8.)*(1.+xi_1)*(1.+xi_3);
+  values[2] =(1./8.)*(1.+xi_1)*(1.+xi_2);
+}//EDIT
 
   return values;
 }
@@ -141,12 +233,12 @@ template <int dim>
 void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 
   //Define the limits of your domain
-  double x_min = , //EDIT - define the left limit of the domain, etc.
-    x_max = , //EDIT
-    y_min = , //EDIT
-    y_max = , //EDIT
-    z_min = , //EDIT
-    z_max = ; //EDIT
+  double x_min =0.0 , //EDIT - define the left limit of the domain, etc.
+    x_max =0.04 , //EDIT
+    y_min =0.0 , //EDIT
+    y_max =0.08 , //EDIT
+    z_min =0.0 , //EDIT
+    z_max =0.02 ; //EDIT
 
   Point<dim,double> min(x_min,y_min,z_min),
     max(x_max,y_max,z_max);
@@ -172,6 +264,17 @@ void FEM<dim>::define_boundary_conds(){
     e.g. nodeLocation[7][2] is the z coordinate of global node 7*/
 
   const unsigned int totalNodes = dof_handler.n_dofs(); //Total number of nodes
+  for(unsigned int globalNode=0; globalNode<totalNodes; globalNode++)
+{
+  if(nodeLocation[globalNode][0]== 0.	)
+  {
+   boundary_values[globalNode] = 300.0*(1.0 + (nodeLocation[globalNode][1]+nodeLocation[globalNode][2]/3.0);
+  }
+  if(nodeLocation[globalNode][0]== 0.04	)
+  {
+   boundary_values[globalNode] = 310.0*(1.0 + (nodeLocation[globalNode][1] +nodeLocation[globalNode][2] )/3.0);
+  }
+}
 }
 
 //Setup data structures (sparse matrix, vectors)
@@ -298,7 +401,10 @@ void FEM<dim>::assemble_system(){
 		for(unsigned int j=0;j<dim;j++){
 		  for(unsigned int I=0;I<dim;I++){
 		    for(unsigned int J=0;J<dim;J++){
-		      //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+		      Klocal[A][B]+=detJ*basis_gradient(A,quad_points[q1],quad_points[q2],quad_points[q3])[i]
+			*invJacob[i][I]*basis_gradient(B,quad_points[q1],quad_points[q2],quad_points[q3])[j]
+			*invJacob[j][J]*(kappa[I][J])
+			*quad_weight[q1]*quad_weight[q2]*quad_weight[q3] ;//EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
 		    }
 		  }
 		}
@@ -313,7 +419,7 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	//EDIT - Assemble K from Klocal (you can look at HW2)
+	K.add(local_dof_indices[A],local_dof_indices[B],Klocal[A][B]);//EDIT - Assemble K from Klocal (you can look at HW2)
       }
     }
 
