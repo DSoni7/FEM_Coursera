@@ -149,23 +149,23 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
   //EDIT
   if(node == 0)
   {
-    value[0] = -(1.0 - xi_2)/4.0;
-    value[1] = -(1.0 - xi_1)/4.0;
+    values[0] = -(1.0 - xi_2)/4.0;
+    values[1] = -(1.0 - xi_1)/4.0;
   }
   if(node == 1)
   {
-    value[0] = (1.0 - xi_2)/4.0;
-    value[1] = -(1.0 + xi_1)/4.0; 
+    values[0] = (1.0 - xi_2)/4.0;
+    values[1] = -(1.0 + xi_1)/4.0; 
   }
   if(node == 3)
   {
-    value[0] = (1.0 + xi_2)/4.0;
-    value[1] = (1.0 + xi_1)/4.0;
+    values[0] = (1.0 + xi_2)/4.0;
+    values[1] = (1.0 + xi_1)/4.0;
   }
   if(node == 2)
   {
-    value[0] = -(1.0 + xi_2)/4.0;
-    value[1] = (1.0 - xi_1)/4.0;
+    values[0] = -(1.0 + xi_2)/4.0;
+    values[1] = (1.0 - xi_1)/4.0;
   }
 
   return values;
@@ -339,7 +339,7 @@ void FEM<dim>::assemble_system(){
 	      for(unsigned int j=0;j<dim;j++){
 		for(unsigned int I=0;I<dim;I++){
 		  for(unsigned int J=0;J<dim;J++){
-		    Klocal[A][B] +=  detJ*basis_gradient(A,quad_points[q1],quad_points[q2])[i]*invJacob[i][I]*basis_gradient(B,quad_points[q1],quad_points[q2])[j]*invJacob[j][J]*(kappa[I][J])*quad_weight[q1]*quad_weight[q2]	;//EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+		    Klocal[A][B] +=  detJ*basis_gradient(A,quad_points[q1],quad_points[q2])[i]*invJacob[i][I]*basis_gradient(B,quad_points[q1],quad_points[q2])[j]*invJacob[j][J]*(kappa[I][J])*quad_weight[q1]*quad_weight[q2];//EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
 		  }
 		}
 	      }
