@@ -112,8 +112,8 @@ template <int dim>
 double FEM<dim>::C(unsigned int i,unsigned int j,unsigned int k,unsigned int l){
 
   //Define the material parameters of Young's modulus and Poisson's ratio
-  double E= ,  //EDIT
-    nu= ; //EDIT
+  double E=2e11 ,  //EDIT
+    nu=0.3 ; //EDIT
   double lambda=(E*nu)/((1.+nu)*(1.-2.*nu)),
     mu=E/(2.*(1.+nu));
 
@@ -126,12 +126,12 @@ template <int dim>
 void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 
   //Define the limits of your domain
-  double x_min = , //EDIT
-    x_max = , //EDIT
-    y_min = , //EDIT
-    y_max = , //EDIT
-    z_min = , //EDIT
-    z_max = ; //EDIT
+  double x_min =0 , //EDIT
+    x_max =1 , //EDIT
+    y_min =0 , //EDIT
+    y_max =1 , //EDIT
+    z_min =0 , //EDIT
+    z_max =1 ; //EDIT
 
   Point<dim,double> min(x_min,y_min,z_min),
     max(x_max,y_max,z_max);
@@ -143,7 +143,7 @@ template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
   //EDIT - Define the Dirichlet boundary conditions.
-	
+  
   /*Note: this will be very similiar to the define_boundary_conds function
     in the HW2 template. You will loop over all degrees of freedom and use "dofLocation"
     to check if the dof is on the boundary with a Dirichlet condition.
@@ -167,7 +167,14 @@ void FEM<dim>::define_boundary_conds(){
     The row index is the global dof number; the column index refers to the x, y, or z component (0, 1, or 2 for 3D).
     e.g. dofLocation[7][2] is the z-coordinate of global dof 7*/
 
-  const unsigned int totalDOFs = dof_handler.n_dofs(); //Total number of degrees of freedom
+  const unsigned int totalDOFs = dof_handler.n_dofs();
+  for(unsigned int globalDof=0; globalDof<totalDOFs; globalDof++)
+{
+ if(dofLocation[globalDof][2]==0)
+{
+ boundary_values[globalDof] = 0.0;
+}
+}//Total number of degrees of freedom
 }
 
 //Setup data structures (sparse matrix, vectors)
@@ -266,7 +273,7 @@ void FEM<dim>::assemble_system(){
 	    for(unsigned int k=0; k<dim; k++){
 	      for (unsigned int j = 0; j<dim; j++){
 		for (unsigned int l = 0; l<dim; l++){
-		  /*//EDIT - You need to define Klocal here. Note that the indices of Klocal are the element dof numbers (0 through 23),
+		  Klocal[3*A+i][3*B+k]+=(fe_values.shape_grad(3*A+i,q))*(C(i,j,k,l))*(fe_values.shape_grad(3*B+k,q))*(fe_values.JxW(q));/*//EDIT - You need to define Klocal here. Note that the indices of Klocal are the element dof numbers (0 through 23),
 		    which you can caluclate from the element node numbers (0 through 8) and the nodal dofs (0 through 2).
 		    You'll need the following information:
 		    basis gradient vector: fe_values.shape_grad(elementDOF,q), where elementDOF is dim*A+i or dim*B+k
@@ -298,10 +305,10 @@ void FEM<dim>::assemble_system(){
 	//To integrate over this face, loop over all face quadrature points with this single loop
 	for (unsigned int q=0; q<num_face_quad_pts; ++q){
 	  double x = fe_face_values.quadrature_point(q)[0]; //x-coordinate at the current surface quad. point
-	  //EDIT - define the value of the traction vector, h
+	   h[2]  = 1.0e9*x;//EDIT - define the value of the traction vector, h
 	  for (unsigned int A=0; A<nodes_per_elem; A++){ //loop over all element nodes
 	    for(unsigned int i=0; i<dim; i++){ //loop over nodal dofs
-	      /*//EDIT - define Flocal. Again, the indices of Flocal are the element dof numbers (0 through 23).
+	      Flocal[3*A+i] += fe_face_values.shape_value(3*A+i,q)*fe_face_values.JxW(q)*h[i];/*//EDIT - define Flocal. Again, the indices of Flocal are the element dof numbers (0 through 23).
 		Evaluate the basis functions using the elementDOF: fe_face_values.shape_value(elementDOF,q)
 
 		Note that we are looping over all element dofs, not just those on the Neumann face. However,
@@ -316,9 +323,9 @@ void FEM<dim>::assemble_system(){
 
     //Assemble local K and F into global K and F
     for(unsigned int i=0; i<dofs_per_elem; i++){
-      //EDIT - Assemble F from Flocal (you can look at HW2)
+      F[local_dof_indices[i]]  += Flocal[i];//EDIT - Assemble F from Flocal (you can look at HW2)
       for(unsigned int j=0; j<dofs_per_elem; j++){
-	//EDIT - Assemble K from Klocal (you can look at HW2)
+	K.add(local_dof_indices[i],local_dof_indices[j],Klocal[i][j]);//EDIT - Assemble K from Klocal (you can look at HW2)
       }
     }
   }
