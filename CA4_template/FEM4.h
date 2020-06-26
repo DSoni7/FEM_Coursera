@@ -115,12 +115,12 @@ template <int dim>
 void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 
   //Define the limits of your domain
-  double x_min = , //EDIT - define the left limit of the domain, etc.
-    x_max = , //EDIT
-    y_min = , //EDIT
-    y_max = , //EDIT
-    z_min = , //EDIT
-    z_max = ; //EDIT
+  double x_min =0 , //EDIT - define the left limit of the domain, etc.
+    x_max =1 , //EDIT
+    y_min =0 , //EDIT
+    y_max =1 , //EDIT
+    z_min =0 , //EDIT
+    z_max =0.1 ; //EDIT
 
   Point<dim,double> min(x_min,y_min,z_min),
     max(x_max,y_max,z_max);
@@ -132,7 +132,7 @@ template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
   //EDIT - Define the Dirichlet boundary conditions.
-	
+  	
   /*Note: this will be very similiar to the define_boundary_conds function
     in the HW2 template. You will loop over all nodes and use "nodeLocations"
     to check if the node is on the boundary with a Dirichlet condition. If it is,
@@ -148,7 +148,20 @@ void FEM<dim>::define_boundary_conds(){
     e.g. nodeLocation[7][2] is the z coordinate of global node 7*/
 
   const unsigned int totalNodes = dof_handler.n_dofs(); //Total number of nodes
-
+  for(i=0;i<totalNodes;i++){
+  if(nodeLocation[i][0]==0)
+  {
+  boundary_values_of_D[i]=300;
+  boundary_values_of_V[i] = 0.0; 
+  }
+  if(nodeLocation[i][0]==1)
+  {
+  boundary_values_of_D[i]=310;
+  boundary_values_of_V[i] = 0.0; 
+  }
+  }
+  }
+  
 }
 
 //Setup data structures (sparse matrix, vectors)
@@ -211,7 +224,7 @@ void FEM<dim>::assemble_system(){
   Vector<double>     Flocal (dofs_per_elem);
 
   std::vector<unsigned int> local_dof_indices (dofs_per_elem); //This relates local dof numbering to global dof numbering
-  double		    rho = ;                            //EDIT - specify the specific heat per unit volume
+  double		    rho =3.8151e6 ;                            //EDIT - specify the specific heat per unit volume
 
   //loop over elements  
   typename DoFHandler<dim>::active_cell_iterator elem = dof_handler.begin_active (),
@@ -236,7 +249,7 @@ void FEM<dim>::assemble_system(){
     for(unsigned int q=0; q<num_quad_pts; q++){
       for(unsigned int A=0; A<fe.dofs_per_cell; A++){
 	for(unsigned int B=0; B<fe.dofs_per_cell; B++){
-	  //EDIT - define Mlocal[A][B]
+	  Mlocal[A][B]+=rho*(fe_values.shape_value(A,q))*(fe_values.shape_value(B,q)*(fe_values.JxW(q));//EDIT - define Mlocal[A][B]
 	}
       }
     }
@@ -253,7 +266,7 @@ void FEM<dim>::assemble_system(){
 	for(unsigned int q=0; q<num_quad_pts; q++){
 	  for(unsigned int i=0; i<dim; i++){
 	    for(unsigned int j=0; j<dim; j++){
-	      //EDIT - define Klocal[A][B]
+	      Klocal[A][B]+=fe_values.shape_grad(A,q)[i]*kappa[i][j]*fe_values.shape_grad(B,q)[j]*fe_values.JxW(q);//EDIT - define Klocal[A][B]
 	    }
 	  }
 	}
@@ -262,7 +275,8 @@ void FEM<dim>::assemble_system(){
 
     for (unsigned int i=0; i<dofs_per_elem; ++i){
       for (unsigned int j=0; j<dofs_per_elem; ++j){
-	//EDIT - assemble K and M from Klocal and Mlocal
+	M.add(local_dof_indices[i],local_dof_indices[j],Mlocal[i][j]);
+	K.add(local_dof_indices[i],local_dof_indices[j],Klocal[i][j]);//EDIT - assemble K and M from Klocal and Mlocal
       }
     }
   }
@@ -296,10 +310,10 @@ void FEM<dim>::apply_initial_conditions(){
 
   for(unsigned int i=0; i<totalNodes; i++){
     if(nodeLocation[i][0] < 0.5){
-      D_trans[i] = ; //EDIT
+      D_trans[i] =300 ; //EDIT
     }
     else{
-      D_trans[i] = ; //EDIT
+      D_trans[i] =300.0 + 20.0*(nodeLocation[i][0]-0.5); ; //EDIT
     }
   }
 
@@ -352,12 +366,17 @@ void FEM<dim>::solve_trans(){
       For some examples, look at the apply_initial_conditions() function*/
 
     //Find D_tilde. Remember, at this point D_trans = D_n and V_trans = V_n
-    //EDIT
+    D_tilde=D_trans
+    D_tilde.add(delta_t*(1.0-alpha),V_trans)//EDIT
 
     /*Use D_tilde to update V_trans from V_n to V_{n+1}. This involves solving 
       a matrix/vector system: system_matrix*Vtrans = RHS. You need to define
       system_matrix and RHS to correctly solve for V_trans = V_{n+1} = system_matrix^{-1}*RHS*/
-    //EDIT
+       system_matrix.copy_from(M);
+       system_matrix.add(alpha*delta_t,K);
+       K.vmult(RHS,D_tilde); //RHS = K*D_trans
+       RHS *= -1.;           //RHS = -1.*RHS = -K*D_trans
+       RHS.add(1.,F);//EDIT
 
     //Apply boundary conditions on V_trans before solving the matrix/vector system
     MatrixTools::apply_boundary_values (boundary_values_of_V, system_matrix, V_trans, RHS, false);
@@ -373,7 +392,8 @@ void FEM<dim>::solve_trans(){
       multiplies a vector by the matrix itself (non-inverted)*/
 
     //Update D_trans to D_{n+1} using D_tilde and V_trans (V_{n+1})
-    //EDIT
+    D_trans = D_tilde;
+    D_trans.add(alpha*delta_t,V_trans);//EDIT
 
     //Output the results every 100 seconds
     if(t_step%100 == 0){
@@ -438,10 +458,11 @@ double FEM<dim>::l2norm(){
     for(unsigned int q=0; q<num_quad_pts; q++){
       u_steady = 0.; u_trans = 0.;
       for(unsigned int A=0; A<dofs_per_elem; A++){
-	/*//EDIT - interpolate the steady state solution (u_steady) and transient solution (u_trans)
+	u_steady += D_steady[local_dof_indices[A]]*fe_values.shape_value(A,q);
+	u_trans += D_trans[local_dof_indices[A]]*fe_values.shape_value(A,q); /*//EDIT - interpolate the steady state solution (u_steady) and transient solution (u_trans)
 	  at the current quadrature point using D_steady and D_trans. Similar to finding u_h in HW2*/
       }
-      //EDIT - define the l2norm of the difference between u_steady and u_trans
+      l2norm += (u_steady-u_trans)*(u_steady-u_trans)*fe_values.JxW(q);//EDIT - define the l2norm of the difference between u_steady and u_trans
     }
 
   }
